@@ -8,8 +8,8 @@ from user.forms import LoginModelForm, RegisterModelForm
 from user.models import User
 
 
-def index(request):
-    return render(request,'user/index.html')
+def userinfo(request):
+    return render(request,'user/infor.html')
 
 
 # 注册
@@ -51,7 +51,7 @@ class LoginView(View):
             user = form.cleaned_data.get('user')
             request.session['id'] = user.pk
             request.session['phone'] = user.phone
-            return redirect('goods:商品列表')
+            return redirect('goods:商品首页')
         else:
             # 判断不通过,报错
             return render(request,'user/login.html',{'form':form})
