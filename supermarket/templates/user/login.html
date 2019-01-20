@@ -11,13 +11,13 @@
     <div style="height: 49px;"></div>
     <div style="height: 3rem;"></div>
     <input type="text" name="phone" id="phone" value="{{ request.POST.phone }}" placeholder="请输入用户名/手机号" class="login-name">
-    <p class="text-danger">{{ form.errors.phone.0 }}</p>
+    <p class="am-text-danger">{{ form.errors.phone.0 }}</p>
     <input type="password" name="password" id="password" value="{{ request.POST.password }}" placeholder="请输入密码" class="login-password">
-    <p class="text-danger">{{ form.errors.password.0 }}</p>
+    <p class="am-text-danger">{{ form.errors.password.0 }}</p>
     <input type="submit" class="login-btn" value="我要登录">
     <div class="agree">
 
-        <a href="reg.html">免费注册</a>
+        <a href="{% url 'user:注册' %}">免费注册</a>
         <a href="forgetpassword.html" class="forget">忘记密码？</a>
     </div>
     <div class="line"></div>

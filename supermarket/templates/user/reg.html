@@ -1,0 +1,28 @@
+{% extends 'common/parent.html' %}
+{% load static %}
+{% block title %}
+    注册
+{% endblock %}
+
+{% block content %}
+<form action="" method="post">
+    {% csrf_token %}
+    <div style="height: 49px;"></div>
+    <div style="height: 3rem;"></div>
+    <input type="text" name="phone" value="{{ request.POST.phone }}" placeholder="请输入手机号" class="login-name">
+    <p class="am-text-danger">{{ form.errors.phone.0 }}</p>
+
+    <input type="password" name="password" value="{{ request.POST.password }}" placeholder="请输入密码" class="login-password">
+    <p class="am-text-danger">{{ form.errors.password.0 }}</p>
+
+    <input type="password" name="repassword" value="{{ request.POST.repassword }}" placeholder="确认密码" class="login-name">
+    <p class="am-text-danger">{{ form.errors.repassword.0 }}</p>
+
+    <input type="submit" class="login-btn" value="立即注册">
+    <div class="agree">
+        <input type="checkbox" name="checkbox" value="同意" checked="">&nbsp;同意
+        <a href="" class="xy">《用户协议》</a>
+        <div class="r-login">已有账号，请<a href="{% url 'user:登录' %}" class="l-login">登录</a></div>
+    </div>
+</form>
+{% endblock %}
