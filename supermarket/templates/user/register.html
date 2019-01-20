@@ -5,8 +5,48 @@
     <title>Title</title>
 </head>
 <body>
-<p>
-    这是一个注册页面
-</p>
+{% block content %}
+<div class="container">
+    <div class="col-xs-6 col-xs-offset-3">
+        <div class="page-header">
+            <h3 class="text-center">注册</h3>
+        </div>
+
+        <form action="" method="post" class="form-horizontal">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="item_name" class="col-sm-2 control-label">用户名</label>
+                <div class="col-sm-10">
+                    <input type="text" name="username" value="{{ request.POST.username }}" class="form-control" id="user_name" placeholder="输入用名">
+                    <p class="text-danger">{{ form.errors.username.0 }}</p>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="fin_date" class="col-sm-2 control-label">密码</label>
+                <div class="col-sm-10">
+                    <input type="password" name="password"  class="form-control" id="user_name" placeholder="输入密码">
+                    <p class="text-danger">{{ form.errors.password.0 }}</p>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="user_cnt" class="col-sm-2 control-label">确认密码</label>
+                <div class="col-sm-10">
+                    <input type="password" name="repassword" class="form-control" id="user_name" placeholder="确认密码">
+                    <p class="text-danger">{{ form.errors.repassword.0 }}</p>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-sm-offset-2 col-sm-10">
+                    <button type="submit" class="btn btn-success">注册</button>
+                </div>
+            </div>
+            <div class="form-group">
+                <p class="text-danger">请填写正确格式数据...</p>
+                <p class="text-danger">{{errors}}</p>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
 </body>
 </html>
