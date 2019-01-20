@@ -1,46 +1,31 @@
-{%  %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
-{% block content %}
-<div class="container">
-    <div class="col-xs-6 col-xs-offset-3">
-        <div class="page-header">
-            <h3 class="text-center">登录</h3>
-        </div>
+{% extends 'common/parent.html' %}
+{% load static %}
 
-        <form action="" method="post" class="form-horizontal">
-            {% csrf_token %}
-            <div class="form-group">
-                <label for="user_name" class="col-sm-2 control-label">用户名</label>
-                <div class="col-sm-10">
-                    <input type="text" name="username" value="{{ request.POST.username }}" class="form-control" id="item_name" placeholder="输入用名">
-                    <p class="text-danger">{{ form.errors.username.0 }}</p>
-                </div>
-            </div>
-            <div class="form-group">
-                <label for="fin_date" class="col-sm-2 control-label">密码</label>
-                <div class="col-sm-10">
-                    <input type="password" name="password"  class="form-control" id="user_name" placeholder="输入密码">
-                    <p class="text-danger">{{ form.errors.password.0 }}</p>
-                </div>
-            </div>
-            <div class="form-group">
-                <div class="col-sm-offset-2 col-sm-10">
-                    <button type="submit" class="btn btn-success">登录</button>
-                </div>
-            </div>
-            <div class="form-group">
-                <p class="text-danger">请填写正确格式数据...</p>
-                <p class="text-danger">{{errors}}</p>
-            </div>
-        </form>
-    </div>
-</div>
+{% block title %}
+    登录
 {% endblock %}
-</body>
-</html>
+
+{% block content %}
+<form action="" method="post">
+    {% csrf_token %}
+    <div style="height: 49px;"></div>
+    <div style="height: 3rem;"></div>
+    <input type="text" name="phone" id="phone" value="{{ request.POST.phone }}" placeholder="请输入用户名/手机号" class="login-name">
+    <p class="text-danger">{{ form.errors.phone.0 }}</p>
+    <input type="password" name="password" id="password" value="{{ request.POST.password }}" placeholder="请输入密码" class="login-password">
+    <p class="text-danger">{{ form.errors.password.0 }}</p>
+    <input type="submit" class="login-btn" value="我要登录">
+    <div class="agree">
+
+        <a href="reg.html">免费注册</a>
+        <a href="forgetpassword.html" class="forget">忘记密码？</a>
+    </div>
+    <div class="line"></div>
+    <div class="line-text">第三方账号登录</div>
+    <ul class="second-login">
+        <li><a href=""><img src="{% static 'images/wxlogin.png' %}"/></a></li>
+        <li><a href=""><img src="{% static 'images/wxlogin.png' %}"/></a></li>
+        <li><a href=""><img src="{% static 'images/sinalog.png' %}"/></a></li>
+    </ul>
+</form>
+{% endblock %}
