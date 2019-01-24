@@ -18,6 +18,7 @@
     <link href="{% static 'css/style.css' %}" rel="stylesheet" type="text/css"/>
     <script src="{% static 'js/jquery-1.10.2.min.js' %}"></script>
     <script src="{% static 'js/time.js' %}"></script>
+    <script src="{% static 'js/popup.mini.js' %}"></script>
 
     {% block head_css %}
         {#      写css      #}
@@ -37,7 +38,7 @@
                 </a>
             </div>
             <h1 class="am-header-title">
-                <a href="" class="">注册</a>
+                <a href="" class="">登录</a>
             </h1>
         </header>
         <div style="height: 49px;"></div>
@@ -65,6 +66,13 @@
     {% block footer %}
 
     {% endblock %}
+
+    <script type='text/javascript'>
+	(function(){
+		 new PopUp_api({el:'.index-qd',html:'.qd-box'});
+	})()
+    </script>
+    <script src="{% static 'js/amazeui.min.js' %}"></script>
 
     {% block footer_js %}
 
