@@ -9,11 +9,12 @@ https://docs.djangoproject.com/en/1.11/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/1.11/ref/settings/
 """
-
+import sys
 import os
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.join(BASE_DIR, 'apps'))
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.11/howto/deployment/checklist/
@@ -38,7 +39,12 @@ INSTALLED_APPS = [
     # 添加应用
     'user.apps.UserConfig',
     'goods.apps.GoodsConfig',
-    'orders.apps.OrdersConfig'
+    'orders.apps.OrdersConfig',
+    'shopcart.apps.ShopcartConfig',
+    # 添加ckeditor富文本编辑器
+    'ckeditor',
+    # 添加ckeditor富文本编辑器文件上传部件
+    'ckeditor_uploader',
 ]
 
 MIDDLEWARE = [
@@ -65,6 +71,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'django.template.context_processors.media'
             ],
         },
     },
@@ -81,8 +88,8 @@ DATABASES = {
     #     'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'OPTIONS':{
-            'read_default_file':os.path.join(BASE_DIR,'my.cnf')
+        'OPTIONS': {
+            'read_default_file': os.path.join(BASE_DIR, 'my.cnf')
         }
     }
 }
@@ -108,7 +115,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/1.11/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'zh-hans'
 
 TIME_ZONE = 'UTC'
 
@@ -116,7 +123,7 @@ USE_I18N = True
 
 USE_L10N = True
 
-USE_TZ = False
+USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.11/howto/static-files/
@@ -125,3 +132,41 @@ STATIC_URL = '/static/'
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static'),
 ]
+# 设置静态文件根目录
+# STATIC_ROOT = os.path.join(BASE_DIR, "static")
+
+
+# 缓存配置
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://127.0.0.1:6379/1",
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        }
+    }
+}
+# 修改存储引擎
+SESSION_ENGINE = "django.contrib.sessions.backends.cache"
+SESSION_CACHE_ALIAS = "default"
+
+# 配置短信的key
+ACCESS_KEY_ID = 'LTAI2qSiJdWP87em'
+ACCESS_KEY_SECRET = "FzORQ587PgGBoOAdmxzCjaxQi8klUi"
+
+# 配置上传图片
+MEDIA_URL = 'static/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR,'static/media')
+
+# 设置ckeditor的上传目录
+CKEDITOR_UPLOAD_PATH = "uploads/"
+
+# 编辑器样式配置
+CKEDITOR_CONFIGS = {
+    'default': {
+        'toolbar': 'full',
+    },
+}
+
+
+LOGIN_URL = "/user/login/"

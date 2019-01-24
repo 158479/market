@@ -16,9 +16,15 @@ Including another URLconf
 from django.conf.urls import url, include
 from django.contrib import admin
 
+from goods.views import ShopView
+
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
-    url(r'user/', include('user.urls', namespace='user')),
+    url(r'^user/', include('user.urls', namespace='user')),
+    # 上传部件自动调用的上传地址
+    url(r'^ckeditor/', include("ckeditor_uploader.urls")),
     url(r'^goods/',include('goods.urls',namespace='goods')),
-    url(r'^orders/',include('orders.urls',namespace='order'))
+    url(r'^orders/',include('orders.urls',namespace='order')),
+    url(r'shopcart',include('shopcart.urls',namespace='shopcart')),
+    url(r"^$",ShopView.as_view(),name='首页')
 ]
