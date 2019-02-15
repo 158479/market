@@ -42,7 +42,7 @@ class GoodsSKU(BaseModel):
         (True, "上架"),
     )
     sku_name = models.CharField(max_length=150,
-                                verbose_name='商品SPU名')
+                                verbose_name='商品SKU名')
     introduce = models.TextField(null=True,
                                  blank=True,
                                  verbose_name='简介')
@@ -98,7 +98,7 @@ class GoodsPicture(BaseModel):
                                   verbose_name='商品SKU')
 
     def __str__(self):
-        return self.picture_address
+        return "商品相册:{}".format(self.picture_address.name)
 
     class Meta:
         verbose_name = '商品图片管理'

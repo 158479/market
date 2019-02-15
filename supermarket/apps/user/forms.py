@@ -1,7 +1,10 @@
 from django import forms
+from django.core import validators
+from django_redis import get_redis_connection
 
 from user import set_password
-from user.models import User
+from user.models import User, AddAddress
+
 
 # 注册
 class RegisterModelForm(forms.ModelForm):
@@ -19,6 +22,7 @@ class RegisterModelForm(forms.ModelForm):
                                      'min_length': '密码不能小于6位',
                                      'max_length': '密码不能大于16位'
                                  })
+
     captcha = forms.CharField(max_length=6,
                               error_messages={
                                   'required': "验证码必须填写"
@@ -40,7 +44,7 @@ class RegisterModelForm(forms.ModelForm):
             }
         }
 
-    def clean_username(self):
+    def clean_phone(self):
         phone = self.cleaned_data.get('phone')
         flag = User.objects.filter(phone=phone).exists()
         if flag:
@@ -58,14 +62,26 @@ class RegisterModelForm(forms.ModelForm):
             return verify_code
 
     def clean(self):
-        password = self.cleaned_data.get('password','')
+        password = self.cleaned_data.get('password', '')
         repassword = self.cleaned_data.get('repassword')
         if password and repassword and password != repassword:
             raise forms.ValidationError({'repassword': '密码不一致'})
-        else:
-            return self.cleaned_data
+        try:
+            captcha = self.cleaned_data.get('captcha')
+            phone = self.cleaned_data.get('phone', '')
+            # 获取redis中的
+            r = get_redis_connection()
+            random_code = r.get(phone)  # 二进制, 转码
+            random_code = random_code.decode('utf-8')
+            # 比对
+            if captcha and captcha != random_code:
+                raise forms.ValidationError({"captcha": "验证码输入错误!"})
+        except:
+            raise forms.ValidationError({"captcha": "验证码输入错误!"})
+        return self.cleaned_data
 
 
+# 登录
 class LoginModelForm(forms.ModelForm):
     password = forms.CharField(max_length=16,
                                min_length=6,
@@ -101,6 +117,7 @@ class LoginModelForm(forms.ModelForm):
         return self.cleaned_data
 
 
+# 个人信息
 class MyInfoModelForm(forms.ModelForm):
     username = forms.CharField(max_length=16,
                                min_length=6,
@@ -151,3 +168,32 @@ class RePwdModelForm(forms.ModelForm):
             raise forms.ValidationError({'repassword': '密码不一致'})
         else:
             return self.cleaned_data
+
+
+class AddressForm(forms.ModelForm):
+    class Meta:
+        model = AddAddress
+        exclude = ['create_time', 'update_time', 'is_delete', 'user']
+
+        error_messages = {
+            'name': {
+                'required': "请填写用户名！",
+            },
+            'phone': {
+                'required': "请填写手机号码！",
+            },
+            'harea': {
+                'required': "请填写完整地址！",
+            },
+        }
+
+    def clean(self):
+        # 验证如果数据库里地址已经超过6六表报错
+        cleaned_data = self.cleaned_data
+        count = AddAddress.objects.filter(user_id=self.data.get("user_id")).count()
+        if count >= 6:
+            raise forms.ValidationError({"harea": "收货地址最多只能保存6条"})
+        if cleaned_data.get('isdefault'):
+            AddAddress.objects.filter(user_id=self.data.get("user_id")).update(isdefault=False)
+
+        return cleaned_data

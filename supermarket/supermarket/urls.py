@@ -23,8 +23,10 @@ urlpatterns = [
     url(r'^user/', include('user.urls', namespace='user')),
     # 上传部件自动调用的上传地址
     url(r'^ckeditor/', include("ckeditor_uploader.urls")),
-    url(r'^goods/',include('goods.urls',namespace='goods')),
-    url(r'^orders/',include('orders.urls',namespace='order')),
-    url(r'shopcart',include('shopcart.urls',namespace='shopcart')),
-    url(r"^$",ShopView.as_view(),name='首页')
+    url(r'^goods/', include('goods.urls', namespace='goods')),
+    url(r'^orders/', include('orders.urls', namespace='order')),
+    url(r'^shopcart/', include('shopcart.urls', namespace='shopcart')),
+    url(r"^$", ShopView.as_view(), name='首页'),
+    # 全文搜索框架
+    url(r'^search/', include('haystack.urls',namespace='search')),
 ]

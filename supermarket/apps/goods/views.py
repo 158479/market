@@ -1,12 +1,11 @@
 from django.shortcuts import render
 from django.views import View
 
-from db.base_view import BaseVerifyView
+
+from goods.models import GoodsSKU, Classification
+from shopcart.helper import get_cart_count
 
 # 首页
-from goods.models import GoodsSKU, Classification
-
-
 class ShopView(View):
     def get(self, request):
         return render(request, 'goods/index.html')
@@ -17,7 +16,6 @@ class ShopView(View):
 
 # 城市
 class CityView(View):
-
     def get(self, request):
         return render(request, 'goods/city.html')
 
@@ -71,21 +69,49 @@ class SpeedView(View):
 
 
 # 商品详情
-def detail(request,id):
-    goods_sku = GoodsSKU.objects.get(pk=id)
-    context = {
-        'goods_sku': goods_sku
-    }
-    return render(request, 'goods/detail.html', context=context)
-
-
-
-class CategoryView(View):
-    def get(self, request):
-        categorys = Classification.objects.filter(is_delete=False)
-        goods_skus = GoodsSKU.objects.filter(is_delete=False)
+class DetailView(View):
+    def get(self, request, id):
+        goods_sku = GoodsSKU.objects.get(pk=id)
+        cart_count = get_cart_count(request)
         context = {
-            'categorys':categorys,
-            'goods_skus':goods_skus
+            'goods_sku': goods_sku,
+            'cart_count':cart_count
+        }
+        return render(request, 'goods/detail.html', context=context)
+
+
+# 商品列表
+class CategoryView(View):
+    def get(self, request, cate_id, order):
+        # 查询所有分类
+        categorys = Classification.objects.filter(is_delete=False).order_by("order")
+        # 取出第一个分类
+        if cate_id == "":
+            category = categorys.first()
+            cate_id = category.pk
+        else:
+            # 根据ID查询对应分类
+            cate_id = int(cate_id)
+            category = Classification.objects.get(pk=cate_id)
+
+        # 查询该分类下的所有商品
+        goods_skus = GoodsSKU.objects.filter(is_delete=False, classification=category)
+        if order == '':
+            order = 0
+        order = int(order)
+
+        # 排序
+        order_rule = ['pk', '-sale', 'price', '-price', '-create_time']
+        goods_skus = goods_skus.order_by(order_rule[order])
+
+        # 获取用户购物车中的总数量
+        cart_count = get_cart_count(request)
+
+        context = {
+            'categorys': categorys,
+            'goods_skus': goods_skus,
+            'cate_id': cate_id,
+            'order': order,
+            'cart_count':cart_count
         }
         return render(request, 'goods/category.html', context=context)

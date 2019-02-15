@@ -2,7 +2,7 @@ import random
 import re
 import uuid
 
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.shortcuts import render, redirect
 
 # Create your views here.
@@ -11,10 +11,12 @@ from django.utils.decorators import method_decorator
 from django.views import View
 from django_redis import get_redis_connection
 
+from db.base_view import BaseVerifyView
+from shopcart.helper import json_msg
 from user import set_password
-from user.forms import LoginModelForm, RegisterModelForm, MyInfoModelForm
+from user.forms import LoginModelForm, RegisterModelForm, MyInfoModelForm, AddressForm
 from user.helper import check_login, login, send_sms
-from user.models import User
+from user.models import User, AddAddress
 
 
 # 个人中心
@@ -40,28 +42,26 @@ class MyInfoView(View):
         if request.method == "POST":
             id = request.session.get('ID')
             username = request.POST.get('username')
+            head = request.POST.get('head')
+            if head is not None:
+                User.head = head
+            User.save()
             sex = request.POST.get('sex')
             school = request.POST.get('school')
             address = request.POST.get('address')
             hometown = request.POST.get('hometown')
             data = {
-                'username' : username,
-                'sex' : sex,
-                'school' : school,
-                'address' : address,
-                'hometown' : hometown
+                'head': head,
+                'username': username,
+                'sex': sex,
+                'school': school,
+                'address': address,
+                'hometown': hometown
             }
             User.objects.filter(pk=id).update(**data)
             return redirect('user:个人中心')
         else:
-            return render(request, "user/info.html",)
-
-
-
-
-# @method_decorator(check_login)
-# def dispatch(self, request, *args, **kwargs):
-#     return super().dispatch(request,*args,**kwargs)
+            return render(request, "user/info.html", )
 
 
 # 注册(完成)
@@ -104,7 +104,15 @@ class LoginView(View):
             # request.session['phone'] = user.phone
             # request.session.set_expiry(0)
             login(request, user)
-            return redirect('goods:商品首页')
+            referer = request.session.get('referer')
+            if referer:
+                # 跳转回去
+                # 删除session
+                del request.session['referer']
+                return redirect(referer)
+            else:
+                # 合成响应, 跳转到个人中心
+                return redirect('user:个人中心')
         else:
             # 判断不通过,报错
             return render(request, 'user/login.html', {'form': form})
@@ -156,10 +164,43 @@ class RePassView(View):
         pass
         return render(request, 'user/saftystep.html')
 
+
 # 安全中心
 def safe(request):
     return render(request, 'user/saftystep.html')
 
-# 收货地址
-def address(request):
-    pass
+
+# 添加收货地址
+class AddressView(BaseVerifyView):
+    def get(self, request):
+        return render(request, 'user/address.html')
+
+    def post(self, request):
+        # 接收参数,并转换成字典
+        data = request.POST.dict()
+
+        # 字典保存用户
+        data['user_id'] = request.session.get("ID")  # form自动转换功能
+
+        # 验证参数
+        form = AddressForm(data)
+        if form.is_valid():
+            form.instance.user = User.objects.get(pk=data['user_id'])
+            form.save()
+            return JsonResponse(json_msg(0, '添加成功'))
+        else:
+            return JsonResponse(json_msg(1, '添加失败', data=form.errors))
+
+
+# 收获地址列表
+class AddressList(BaseVerifyView):
+    def get(self, request):
+        # 获取用户的收货地址
+        user_id = request.session.get("ID")
+        user_addresses = AddAddress.objects.filter(user_id=user_id, is_delete=False).order_by("-isdefault")
+
+        # 渲染数据
+        context = {
+            'addresses': user_addresses
+        }
+        return render(request, 'user/address_list.html', context=context)
