@@ -2,13 +2,19 @@ from django.shortcuts import render
 from django.views import View
 
 
-from goods.models import GoodsSKU, Classification
+from goods.models import GoodsSKU, Classification, Banner
 from shopcart.helper import get_cart_count
 
 # 首页
 class ShopView(View):
     def get(self, request):
-        return render(request, 'goods/index.html')
+        banner = Banner.objects.all()
+        goods_sku = GoodsSKU.objects.filter(is_delete=False)
+        context={
+            'banner':banner,
+            'goods_sku':goods_sku
+        }
+        return render(request, 'goods/index.html',context=context)
 
     def post(self, request):
         pass
@@ -115,3 +121,4 @@ class CategoryView(View):
             'cart_count':cart_count
         }
         return render(request, 'goods/category.html', context=context)
+

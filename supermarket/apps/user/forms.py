@@ -1,5 +1,6 @@
 from django import forms
 from django.core import validators
+from django.core.validators import RegexValidator
 from django_redis import get_redis_connection
 
 from user import set_password
@@ -131,45 +132,83 @@ class MyInfoModelForm(forms.ModelForm):
         model = User
         exclude = ['username']
 
-
-class RePwdModelForm(forms.ModelForm):
-    password = forms.CharField(max_length=16,
-                               min_length=6,
-                               error_messages={
-                                   'required': '密码不能为空',
-                                   'min_length': '密码不能小于6位',
-                                   'max_length': '密码不能大于16位'
-                               })
-
-    new_password = forms.CharField(max_length=16,
-                                   min_length=6,
-                                   error_messages={
-                                       'required': '密码不能为空',
-                                       'min_length': '密码不能小于6位',
-                                       'max_length': '密码不能大于16位'
-                                   })
-
-    re_newpassword = forms.CharField(max_length=16,
-                                     min_length=6,
-                                     error_messages={
-                                         'required': '密码不能为空',
-                                         'min_length': '密码不能小于6位',
-                                         'max_length': '密码不能大于16位'
-                                     })
-
-    class Meta:
-        model = User
-        fields = ['password']
+# 忘记密码
+class ForgetForm(forms.Form):
+    phone = forms.CharField(max_length=11,
+                            error_messages={'required': '请填写手机号!'},
+                            validators=[RegexValidator(r'^1[3-9]\d{9}$', message="手机号码格式错误!")]
+                            )
+    password2 = forms.CharField(max_length=20,
+                                min_length=6,
+                                error_messages={
+                                    'required': '请填写密码!',
+                                    'min_length': '请输入至少六个字符!',
+                                    'max_length': '请输入小于或等于二十个字符!'
+                                })
+    repassword2 = forms.CharField(max_length=20,
+                                  min_length=6,
+                                  error_messages={
+                                      'required': '这是必填选项!',
+                                      'min_length': '请输入至少六个字符!',
+                                      'max_length': '请输入小于或等于二十个字符!'
+                                  })
+    # 验证码
+    captcha = forms.CharField(max_length=6,
+                              error_messages={
+                                  'required': "验证码必须填写!"
+                              })
 
     def clean(self):
-        password = self.cleaned_data.get('new_password')
-        repassword = self.cleaned_data.get('re_newpassword')
-        if password and repassword and password != repassword:
-            raise forms.ValidationError({'repassword': '密码不一致'})
+        pwd = self.cleaned_data.get("password")  # 密码
+        repwd = self.cleaned_data.get("repassword")  # 重复密码
+        if pwd and repwd and pwd != repwd:
+            raise forms.ValidationError({"repassword": "两次密码不一致,请重新输入!"})
+        # 返回,返回整个清洗后的数据
+        return self.cleaned_data
+
+    def clean_mobile(self):  # 验证用户名是否存在
+        phone = self.cleaned_data.get('phone')
+        flag = User.objects.filter(phont=phone).exists()
+        if flag:
+            # 存在 正确
+            return phone
         else:
-            return self.cleaned_data
+            raise forms.ValidationError("该手机未注册,请注册!")
+
+# 修改密码
+class PasswordForm(forms.Form):
+    password = forms.CharField(max_length=20,
+                               min_length=6,
+                               error_messages={
+                                   'required': '请填写密码!',
+                                   'min_length': '请输入至少六个字符!',
+                                   'max_length': '请输入小于或等于二十个字符!'
+                               })
+    password2 = forms.CharField(max_length=20,
+                                min_length=6,
+                                error_messages={
+                                    'required': '请填写修改密码!',
+                                    'min_length': '请输入至少六个字符!',
+                                    'max_length': '请输入小于或等于二十个字符!'
+                                })
+    repassword2 = forms.CharField(max_length=20,
+                                  min_length=6,
+                                  error_messages={
+                                      'required': '这是必填选项!',
+                                      'min_length': '请输入至少六个字符!',
+                                      'max_length': '请输入小于或等于二十个字符!'
+                                  })
+
+    def clean(self):
+        pwd = self.cleaned_data.get("password2")  # 密码
+        repwd = self.cleaned_data.get("repassword2")  # 重复密码
+        if pwd and repwd and pwd != repwd:
+            raise forms.ValidationError({"repassword2": "两次密码不一致,请重新输入!"})
+        # 返回,返回整个清洗后的数据
+        return self.cleaned_data
 
 
+# 收货地址
 class AddressForm(forms.ModelForm):
     class Meta:
         model = AddAddress

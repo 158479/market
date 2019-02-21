@@ -32,8 +32,10 @@
     <!--图片轮换-->
     <div class="am-slider am-slider-default" data-am-flexslider id="demo-slider-0">
         <ul class="am-slides">
-            <li><img src="{% static 'images/banner.png' %}"/></li>
-            <li><img src="{% static 'images/banner.png' %}"/></li>
+            {% for v in banner %}
+            <li><a href="{% url 'goods:商品详情' v.goods_sku.pk %}"><img src="{{ MEDIA_URL }}{{ v.img_url }}"/> </a><p>{{ v.name }}</p></li>
+            {% endfor %}
+
         </ul>
     </div>
     <!--导航-->
@@ -114,24 +116,19 @@
         特色专区
     </div>
     <ul data-am-widget="gallery" class="am-gallery pro-list am-avg-sm-2 am-avg-md-2 am-avg-lg-4 am-gallery-default">
-        <li>
+    {% for i in goods_sku %}
+            <li>
             <div class="am-gallery-item">
-                <a href="detail.html" class="">
-                    <img src=" {% static 'images/test.png' %}"/>
-                    <h3 class="am-gallery-title">猪骨头棒新鲜生鲜肉制品猪大骨头筒骨熬汤佳品500g</h3>
-                    <div class="am-gallery-desc">￥52</div>
+                <a href="{% url 'goods:商品详情' i.pk %}" class="">
+                    <img src=" {{ MEDIA_URL }}{{ i.logo }}"/>
+                    <h3 class="am-gallery-title">{{i.goods_spu.spu_name}}&emsp;{{ i.sku_name }}</h3>
+                    <div class="am-gallery-desc">￥{{i.price}}</div>
                 </a>
             </div>
         </li>
-        <li>
-            <div class="am-gallery-item">
-                <a href="detail.html" class="">
-                    <img src=" {% static 'images/test1.png' %}"/>
-                    <h3 class="am-gallery-title">冻品批发大江鸡腿 冷鲜鸡腿放心食材1kg 冷冻食材</h3>
-                    <div class="am-gallery-desc">￥39</div>
-                </a>
-            </div>
-        </li>
+    {% endfor %}
+
+
     </ul>
 <!--签到-->
 <div class="qd-box">
@@ -172,7 +169,7 @@
                 </a>
             </li>
             <li>
-                <a href="allorder.html" class="">
+                <a href="{% url 'order:确认订单' %}}" class="">
                     <span class="am-icon-file-text"></span>
                     <span class="am-navbar-label">订单</span>
                 </a>

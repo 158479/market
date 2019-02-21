@@ -1,16 +1,21 @@
+import os
 import random
 from datetime import datetime
+from time import sleep
 
-from django.http import JsonResponse
+from alipay import AliPay
+from django.http import JsonResponse, HttpResponse
 from django.shortcuts import render, redirect
 
 # Create your views here.
+from django.views import View
 from django_redis import get_redis_connection
 
 from db.base_view import BaseVerifyView
 from goods.models import GoodsSKU
-from orders.models import Transport, OrderGoods, Order
+from orders.models import Transport, OrderGoods, Order, Payment
 from shopcart.helper import get_cart_key, json_msg
+from supermarket import settings
 
 from user.models import AddAddress, User
 
@@ -140,19 +145,170 @@ class ReOrder(BaseVerifyView):
         order.order_price = order_price
         order.save()
 
-        # 4. 清空redis中的购物车数据(对应sku_id)
+        # 清空redis中的购物车数据
         r.hdel(cart_key, *sku_ids)
 
-        # 3. 合成响应
+        # 合成响应
         return JsonResponse(json_msg(0, "创建订单成功!", data=order_sn))
 
 
 # 确认支付
 class ShowOrder(BaseVerifyView):
     def get(self, request):
-        order_sn = request.session.get("order_sn")
-        data = Order.objects.filter(order_sn=order_sn)
+        # 接收参数
+        user_id = request.session.get('ID')
+        order_sn = request.GET.get("order_sn")
+        # 订单信息
+        rs = Order.objects.get(order_sn=order_sn, user_id=user_id)
+        # 支付方式
+        payments = Payment.objects.filter(is_delete=False).order_by('id')
         context = {
-            'data':data
+            'rs': rs,
+            'payments': payments
         }
-        return render(request, 'orders/order.html',context=context)
+        return render(request, 'orders/order.html', context=context)
+
+    def post(self, request):
+        # 接收参数
+        # 支付方式
+        payment = request.POST.get('payment')
+        # 订单号
+        order_sn = request.POST.get('order_sn')
+        user_id = request.session.get('ID')
+        try:
+            payment = int(payment)
+        except:
+            return JsonResponse(json_msg(1, '参数错误'))
+        # 判断支付方式是否存在
+        try:
+            payment = Payment.objects.get(pk=payment)
+        except Payment.DoesNotExist:
+            return JsonResponse(json_msg(2, '支付方式不存在'))
+        # 判断订单是否正确
+        try:
+            order = Order.objects.get(user_id=user_id, order_sn=order_sn, order_status=0)
+        except Order.DoesNotExist:
+            return JsonResponse(json_msg(3, '没有这个订单'))
+
+        if payment.name == '支付宝':
+            app_private_key_string = open(os.path.join(settings.BASE_DIR, "alipay/user_private_key.txt")).read()
+            alipay_public_key_string = open(os.path.join(settings.BASE_DIR, 'alipay/alipay_public_key.txt')).read()
+            # 初始化
+            alipay = AliPay(
+                appid="2016092400582068",
+                app_notify_url=None,
+                app_private_key_string=app_private_key_string,
+                # 支付宝公钥
+                alipay_public_key_string=alipay_public_key_string,
+                sign_type="RSA2",
+                debug=True
+            )
+            # 构造地址
+            order_string = alipay.api_alipay_trade_wap_pay(
+                out_trade_no=order.order_sn,
+                total_amount=str(order.order_price),
+                subject='酱油超市支付',
+                return_url="http://127.0.0.1:8001/orders/pay",
+                notify_url=None  # 可选, 不填则使用默认notify url
+            )
+            # 拼接地址
+            url = "https://openapi.alipaydev.com/gateway.do?" + order_string
+            return JsonResponse(json_msg(0, '创建支付地址成功', data=url))
+        else:
+            return JsonResponse(json_msg(4,'不支持该支付方式'))
+
+
+# 支付
+class Pay(BaseVerifyView):
+    def get(self, request):
+        app_private_key_string = open(os.path.join(settings.BASE_DIR, "alipay/user_private_key.txt")).read()
+        alipay_public_key_string = open(os.path.join(settings.BASE_DIR, 'alipay/alipay_public_key.txt')).read()
+
+        alipay = AliPay(
+            appid="2016092400582068",
+            app_notify_url=None,  # 默认回调url
+            app_private_key_string=app_private_key_string,
+            # 支付宝的公钥，验证支付宝回传消息使用，不是你自己的公钥,
+            alipay_public_key_string=alipay_public_key_string,
+            sign_type="RSA2",  # RSA 或者 RSA2
+            debug=True  # 默认False
+        )
+
+        order_sn = request.GET.get('out_trade_no')
+        total_amount = request.GET.get('total_amount')
+
+        paid = False
+        for i in range(10):
+            # 根据订单编号查询
+            result = alipay.api_alipay_trade_query(out_trade_no=order_sn)
+            print(result)
+            if result.get("trade_status", "") == "TRADE_SUCCESS":
+                # 支付成功
+                paid = True
+                break
+
+            # 继续执行
+            # check every 3s, and 10 times in all
+            sleep(3)
+            print("not paid...")
+
+        # 判断支付是否成功
+        context = {
+            'order_sn': order_sn,
+            'total_amount': total_amount,
+        }
+        if paid is False:
+            # 支付失败
+            context['result'] = "支付失败"
+        else:
+            # 支付成功
+            context['result'] = "支付成功"
+
+        return render(request, "orders/pay.html", context=context)
+
+
+class Notify(View):
+    def post(self, request):
+        # 查询订单是否交易成功
+        # 构造支付请求
+        app_private_key_string = open(os.path.join(settings.BASE_DIR, "alipay/user_private_key.txt")).read()
+        alipay_public_key_string = open(os.path.join(settings.BASE_DIR, 'alipay/alipay_public_key.txt')).read()
+
+        # 初始化对象
+        alipay = AliPay(
+            appid="2016092400582019",
+            app_notify_url=None,  # 默认回调url
+            app_private_key_string=app_private_key_string,
+            # 支付宝的公钥，验证支付宝回传消息使用，不是你自己的公钥,
+            alipay_public_key_string=alipay_public_key_string,
+            sign_type="RSA2",  # RSA 或者 RSA2
+            debug=True  # 默认False
+        )
+
+        # 获取订单编号
+        order_sn = request.POST.get('out_trade_no')
+        order = Order.objects.get(order_sn=order_sn)
+        # check order status
+        paid = False
+        for i in range(10):
+            # 根据订单编号查询
+            result = alipay.api_alipay_trade_query(out_trade_no=order_sn)
+            print(result)
+            if result.get("trade_status", "") == "TRADE_SUCCESS":
+                # 支付成功
+                paid = True
+                break
+
+            # 继续执行
+            # check every 3s, and 10 times in all
+            sleep(3)
+            print("not paid...")
+
+        # 判断支付是否成功
+        # 修改订单状态
+        if paid is True:
+            # 支付成功
+            order.order_status = 1
+            order.save()
+
+        return HttpResponse("success")

@@ -156,7 +156,7 @@ ACCESS_KEY_ID = 'LTAI2qSiJdWP87em'
 ACCESS_KEY_SECRET = "FzORQ587PgGBoOAdmxzCjaxQi8klUi"
 
 # 配置上传图片
-MEDIA_URL = 'static/media/'
+MEDIA_URL = '/static/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR,'static/media')
 
 # 设置ckeditor的上传目录
@@ -173,9 +173,8 @@ CKEDITOR_CONFIGS = {
 HAYSTACK_CONNECTIONS = {
     'default': {
         # 配置搜索引擎
-        'ENGINE': 'haystack.backends.whoosh_backend.WhooshEngine',
+        'ENGINE': 'utils.whoosh_cn_backend.WhooshEngine',
         # # 中文分词 使用jieba的whoosh引擎
-        # 'ENGINE': 'haystack.backends.whoosh_cn_backend.WhooshEngine',
         # 配置索引文件目录
         'PATH': os.path.join(BASE_DIR, 'whoosh_index'),
     },

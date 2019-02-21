@@ -14,7 +14,7 @@ from django_redis import get_redis_connection
 from db.base_view import BaseVerifyView
 from shopcart.helper import json_msg
 from user import set_password
-from user.forms import LoginModelForm, RegisterModelForm, MyInfoModelForm, AddressForm
+from user.forms import LoginModelForm, RegisterModelForm, MyInfoModelForm, AddressForm, ForgetForm
 from user.helper import check_login, login, send_sms
 from user.models import User, AddAddress
 
@@ -43,9 +43,6 @@ class MyInfoView(View):
             id = request.session.get('ID')
             username = request.POST.get('username')
             head = request.POST.get('head')
-            if head is not None:
-                User.head = head
-            User.save()
             sex = request.POST.get('sex')
             school = request.POST.get('school')
             address = request.POST.get('address')
@@ -100,9 +97,6 @@ class LoginView(View):
         if form.is_valid():
             # 根据参数进行判断,通过跳转商品列表
             user = form.cleaned_data.get('user')
-            # request.session['id'] = user.pk
-            # request.session['phone'] = user.phone
-            # request.session.set_expiry(0)
             login(request, user)
             referer = request.session.get('referer')
             if referer:
@@ -153,16 +147,68 @@ class SendMailView(View):
 
         return JsonResponse({'error': 0})
 
-
+# 修改密码
 class RePassView(View):
     def get(self, request):
-        return render(request, 'user/password.html')
+        return render(request, 'user/forgetpassword.html')
 
     def post(self, request):
-        id = request.session.get('ID')
+        # 接收参数
         data = request.POST
-        pass
-        return render(request, 'user/saftystep.html')
+
+        # 验证数据的合法性
+        form = ForgetForm(data)
+        if form.is_valid():
+            # 获取清洗后的数据
+            cleaned = form.cleaned_data
+            # 通过id查询数据
+            user_id = request.session.get('ID')
+            phone = cleaned.get('phone')
+            password2 = set_password(cleaned.get('password2'))
+            # 修改到数据库
+            if User.objects.filter(phone=phone, id=user_id).exists():
+                # 更新密码
+                User.objects.filter(id=user_id).update(password=password2)
+                # 跳转到登录页
+                return redirect('users:登录')
+        else:
+            # 错误
+            return render(request, 'user/forgetpassword.html', context={'errors': form.errors, })
+
+
+# 忘记密码
+class ForgetView(View):
+    """忘记密码"""
+
+    def get(self, request):
+        return render(request, 'user/forgetpassword.html')
+
+    def post(self, request):
+        # 接收参数
+        data = request.POST
+
+        # 验证数据的合法性
+        form = ForgetForm(data)
+        if form.is_valid():
+            # 获取清洗后的数据
+            cleaned = form.cleaned_data
+            # 将密码进行加密
+            # 通过id查询数据
+            user_id = request.session.get('ID')
+            # 取出清洗后的手机号
+            phone = cleaned.get('phone')
+            # 取出清洗后的密码
+            password2 = set_password(cleaned.get('password2'))
+            # 修改到数据库
+            # 验证原密码是否存在,不能用get,用filter
+            if User.objects.filter(phone=phone, id=user_id).exists():
+                # 更新密码
+                User.objects.filter(id=user_id).update(password=password2)
+                # 跳转到登录页
+                return redirect('users:登录')
+        else:
+            # 错误
+            return render(request, 'user/forgetpassword.html', context={'errors': form.errors, })
 
 
 # 安全中心
