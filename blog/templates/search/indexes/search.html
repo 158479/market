@@ -1,0 +1,124 @@
+{% load static %}
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>首页_路人甲个人博客 - 一个专注于打酱油个人博客网站</title>
+    <meta name="keywords" content="个人博客,路人甲个人博客"/>
+    <meta name="description" content="路人甲个人博客 - 一个专注于打酱油个人博客网站"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="{% static 'css/base.css' %}" rel="stylesheet">
+    <link href="{% static 'css/index.css' %}" rel="stylesheet">
+    <link href="{% static 'css/m.css' %}" rel="stylesheet">
+    <!--[if lt IE 9]>
+<script src="js/modernizr.js"></script>
+<![endif]-->
+</head>
+<body>
+<header>
+    <div class="logo"><a href="/"><img src="{% static 'images/logo.png' %}"></a></div>
+    <nav id="nav">
+        <ul>
+            <li><a href="{% url 'blog:博客首页' '' '' %}">网站首页</a></li>
+            <li><a href="">我的相册</a></li>
+            <li><a href="list.html">我的日记</a></li>
+            <li><a href="about.html">关于我</a></li>
+            <li><a href="{% url 'user:登录' %}" data-hover="登录">登录</a></li>
+            <li><a href="{% url 'user:注册' %}" data-hover="注册">注册</a></li>
+        </ul>
+    </nav>
+    <script>
+        window.onload = function () {
+            var obj = null;
+            var As = document.getElementById('nav').getElementsByTagName('a');
+            obj = As[0];
+            for (i = 1; i < As.length; i++) {
+                if (window.location.href.indexOf(As[i].href) >= 0)
+                    obj = As[i];
+            }
+            obj.id = 'selected'
+        }
+    </script>
+</header>
+<article>
+    <div class="l_box">
+        <div class="about_me">
+            <h2>关于我</h2>
+            <ul>
+                <i><img src="{% static 'images/4.jpg' %}"></i>
+                <p><b>路人甲</b>，一个默默无闻的路人,专注于各种酱油角色</p>
+            </ul>
+        </div>
+        <div class="wdxc">
+            <h2>我的相册</h2>
+            <ul>
+                <li><a href="/"><img src="{% static 'images/7.jpg' %}"></a></li>
+                <li><a href="/"><img src="{% static 'images/8.jpg' %}"></a></li>
+                <li><a href="/"><img src="{% static 'images/9.jpg' %}"></a></li>
+                <li><a href="/"><img src="{% static 'images/10.jpg' %}"></a></li>
+                <li><a href="/"><img src="{% static 'images/11.jpg' %}"></a></li>
+                <li><a href="/"><img src="{% static 'images/12.jpg' %}"></a></li>
+            </ul>
+        </div>
+        <div class="search">
+            <form action="{% url 'search:haystack_search' %}" method="get">
+                <div class="cate-search">
+                    <input type="text" name="q" value="" class="cate-input" placeholder="请输入您要的搜索的产品关键词"/>
+                    <input type="submit" value="" class="cate-btn"/>
+                </div>
+            </form>
+        </div>
+        <div class="fenlei">
+            <h2>文章分类</h2>
+            {% for v in categorys %}
+                <ul>
+                    <li {% if cate_id == v.pk %} class="current"{% endif %}><a
+                            href="{% url 'blog:博客首页' v.pk '' %}">{{ v.name }}</a></li>
+                </ul>
+            {% endfor %}
+        </div>
+        <div class="cloud">
+            <h2>标签云</h2>
+            {% for tag in tags %}
+                <ul>
+                    <li {% if tag_id == tag.pk %} class="current"{% endif %}><a
+                            href="{% url 'blog:博客首页' '' tag.pk %}">{{ tag.name }}</a>
+                </ul>
+            {% endfor %}
+        </div>
+    </div>
+    <div class="content-list">
+        <div>
+            <ul class="list-pro">
+
+                {% for search in page  %}
+                <li>
+                    <a href="{% url 'blog:详情' search.object.pk %}"><img src="{% static 'images/1.jpg' %}" class="list-pic"/></a>
+                    <div class="shop-list-mid" style="width: 65%;">
+                        <div class="tit">
+                            <a href="{% url 'blog:详情' search.object.pk %}">
+
+                                {% highlight search.object.post.title with query html_tag "i" css_class "heightline" %}
+                                &emsp;
+                                {% highlight search.object.post.body with query html_tag "i" css_class "heightline" %}
+                            </a>
+                        </div>
+                    </div>
+                </li>
+                {% empty %}
+                    <li>
+                        <a href="#">搜索商品走丢了</a>
+                    </li>
+                {% endfor %}
+
+            </ul>
+
+
+        </div>
+
+
+        </ul>
+    </div>
+</article>
+</body>
+</html>
